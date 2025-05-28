@@ -8,14 +8,14 @@
 #include "esp_decoder.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
-#include "esp_lvgl_port.h"
+// #include "esp_lvgl_port.h" // LVGL 포트 제거
 #include "esp_task_wdt.h"
 #include "esp_timer.h"
 #include "filter_resample.h"
 #include "flac_decoder.h"
 #include "http_stream.h"
 #include "i2s_stream.h"
-#include "lvgl.h"
+// #include "lvgl.h" // LVGL 헤더 제거 (LVGL 객체 사용 안함)
 #include "model_path.h"
 #include "raw_stream.h"
 #include "recorder_encoder.h"
@@ -27,11 +27,11 @@
 
 #include "audio.h"
 #include "config.h"
-#include "display.h"
+// #include "display.h" // 디스플레이 헤더 제거
 #include "shared.h"
-#include "slvgl.h"
-#include "timer.h"
-#include "ui.h"
+// #include "slvgl.h" // slvgl 헤더 제거
+#include "timer.h" // 타이머 관련 헤더 (세션 타이머를 위해 유지)
+#include "ui.h" // ui_pr_err를 위해 유지
 #include "was.h"
 
 #include "endpoint/hass.h"
@@ -46,7 +46,7 @@
 #include "generated_cmd_multinet.h"
 #endif
 
-#define DEFAULT_AUDIO_CODEC         "PCM"
+#define DEFAULT_AUDIO_CODEC           "PCM"
 #define DEFAULT_AUDIO_RESPONSE_TYPE "None"
 #define DEFAULT_RECORD_BUFFER       12
 #define DEFAULT_SPEAKER_VOLUME      60
@@ -95,8 +95,9 @@ static void cb_ea(esp_audio_state_t *state, void *data)
 
 static void play_audio(const char *uri)
 {
-    reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), false);
-    display_set_backlight(true, false);
+    // 디스플레이 관련 호출 제거
+    // reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), false);
+    // display_set_backlight(true, false);
 
     if (hdl_ea == NULL) {
         ESP_LOGE(TAG, "audio_play called with hdl_ea=NULL, skip audio playback");
@@ -188,8 +189,6 @@ static void init_audio_response(void)
 static esp_err_t cb_ae_hs(audio_element_handle_t el, audio_event_iface_msg_t *ev, void *data)
 {
     if (ev->cmd == AEL_MSG_CMD_REPORT_STATUS) {
-        // if we get a AEL_MSG_CMD_REPORT_STATUS command we can check for errors in audio_element_status_t
-        // 1-7 is error
         int ae_status = (int)ev->data;
         ESP_LOGI(TAG, "event_cb_func(): AEL_MSG_CMD_REPORT_STATUS: %d", ae_status);
 
@@ -402,14 +401,16 @@ static esp_err_t cb_ar_event(audio_rec_evt_t *are, void *data)
             // Multinet timeout
             ESP_LOGI(TAG, "AUDIO_REC_COMMAND_DECT");
             war.fn_err("unrecognized command");
-            if (lvgl_port_lock(lvgl_lock_timeout)) {
-                lv_obj_clear_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
-                lv_obj_set_style_text_align(lbl_ln4, LV_TEXT_ALIGN_LEFT, 0);
-                lv_label_set_text(lbl_ln4, "#ff0000 Unrecognized Command");
-                lvgl_port_unlock();
-            }
+            // LVGL UI 관련 호출 제거
+            // if (lvgl_port_lock(lvgl_lock_timeout)) {
+            //     lv_obj_clear_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
+            //     lv_obj_set_style_text_align(lbl_ln4, LV_TEXT_ALIGN_LEFT, 0);
+            //     lv_label_set_text(lbl_ln4, "#ff0000 Unrecognized Command");
+            //     lvgl_port_unlock();
+            // }
 
-            reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), false);
+            // 디스플레이 타이머 관련 호출 제거
+            // reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), false);
             break;
         case AUDIO_REC_WAKEUP_END:
             ESP_LOGI(TAG, "AUDIO_REC_WAKEUP_END");
@@ -432,34 +433,36 @@ static esp_err_t cb_ar_event(audio_rec_evt_t *are, void *data)
             recorder_sr_wakeup_result_t *wake_data = are->event_data;
             ESP_LOGI(TAG, "wake volume: %f", wake_data->data_volume);
             send_wake_start(wake_data->data_volume);
-            reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), true);
+            // 디스플레이 타이머 관련 호출 제거
+            // reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), true);
 
             speech_rec_mode = config_get_char("speech_rec_mode", DEFAULT_SPEECH_REC_MODE);
 
             if (strcmp(speech_rec_mode, "WIS") == 0) {
                 reset_timer(hdl_sess_timer, config_get_int("stream_timeout", DEFAULT_STREAM_TIMEOUT), false);
             }
-            if (lvgl_port_lock(lvgl_lock_timeout)) {
-                lv_obj_add_flag(lbl_ln1, LV_OBJ_FLAG_HIDDEN);
-                lv_obj_add_flag(lbl_ln2, LV_OBJ_FLAG_HIDDEN);
-                lv_obj_add_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
-                lv_obj_add_flag(lbl_ln5, LV_OBJ_FLAG_HIDDEN);
-                lv_obj_clear_flag(btn_cancel, LV_OBJ_FLAG_HIDDEN);
-                lv_obj_clear_flag(lbl_ln3, LV_OBJ_FLAG_HIDDEN);
+            // LVGL UI 관련 호출 제거
+            // if (lvgl_port_lock(lvgl_lock_timeout)) {
+            //     lv_obj_add_flag(lbl_ln1, LV_OBJ_FLAG_HIDDEN);
+            //     lv_obj_add_flag(lbl_ln2, LV_OBJ_FLAG_HIDDEN);
+            //     lv_obj_add_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
+            //     lv_obj_add_flag(lbl_ln5, LV_OBJ_FLAG_HIDDEN);
+            //     lv_obj_clear_flag(btn_cancel, LV_OBJ_FLAG_HIDDEN);
+            //     lv_obj_clear_flag(lbl_ln3, LV_OBJ_FLAG_HIDDEN);
 
-                if (strcmp(speech_rec_mode, "Multinet") == 0) {
-                    lv_label_set_text_static(lbl_ln3, "Say local command...");
-                } else if (strcmp(speech_rec_mode, "WIS") == 0) {
-                    lv_label_set_text_static(lbl_ln3, "Say command...");
-                } else {
-                    return ESP_ERR_INVALID_ARG;
-                }
+            //     if (strcmp(speech_rec_mode, "Multinet") == 0) {
+            //         lv_label_set_text_static(lbl_ln3, "Say local command...");
+            //     } else if (strcmp(speech_rec_mode, "WIS") == 0) {
+            //         lv_label_set_text_static(lbl_ln3, "Say command...");
+            //     } else {
+            //         return ESP_ERR_INVALID_ARG;
+            //     }
 
-                lv_obj_add_event_cb(btn_cancel, cb_btn_cancel, LV_EVENT_PRESSED, NULL);
-                lvgl_port_unlock();
-            }
-            free(speech_rec_mode);
-            display_set_backlight(true, false);
+            //     lv_obj_add_event_cb(btn_cancel, cb_btn_cancel, LV_EVENT_PRESSED, NULL);
+            //     lvgl_port_unlock();
+            // }
+            // 백라이트 제어 제거
+            // display_set_backlight(true, false);
             break;
         default:
             speech_rec_mode = config_get_char("speech_rec_mode", DEFAULT_SPEECH_REC_MODE);
@@ -486,16 +489,18 @@ static esp_err_t cb_ar_event(audio_rec_evt_t *are, void *data)
                 free(json);
 
                 ESP_LOGI(TAG, "Got local command ID: '%d'", command_id);
-                if (lvgl_port_lock(lvgl_lock_timeout)) {
-                    lv_obj_clear_flag(lbl_ln1, LV_OBJ_FLAG_HIDDEN);
-                    lv_obj_clear_flag(lbl_ln2, LV_OBJ_FLAG_HIDDEN);
-                    lv_obj_add_flag(lbl_ln3, LV_OBJ_FLAG_HIDDEN);
+                // LVGL UI 관련 호출 제거
+                // if (lvgl_port_lock(lvgl_lock_timeout)) {
+                //     lv_obj_clear_flag(lbl_ln1, LV_OBJ_FLAG_HIDDEN);
+                //     lv_obj_clear_flag(lbl_ln2, LV_OBJ_FLAG_HIDDEN);
+                //     lv_obj_add_flag(lbl_ln3, LV_OBJ_FLAG_HIDDEN);
 
-                    lv_label_set_text_static(lbl_ln1, "I heard command:");
-                    lv_label_set_text(lbl_ln2, lookup_cmd_multinet(command_id));
-                    lvgl_port_unlock();
-                }
-                reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), false);
+                //     lv_label_set_text_static(lbl_ln1, "I heard command:");
+                //     lv_label_set_text(lbl_ln2, lookup_cmd_multinet(command_id));
+                //     lvgl_port_unlock();
+                // }
+                // 디스플레이 타이머 관련 호출 제거
+                // reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), false);
 #else
                 ESP_LOGE(TAG, "multinet not supported but enabled in config");
 #endif
@@ -516,157 +521,6 @@ static int feed_afe(int16_t *buf, int len, void *ctx, TickType_t ticks)
     }
 
     return raw_stream_read(hdl_ae_rs_from_i2s, (char *)buf, len);
-}
-
-static esp_err_t hdl_ev_hs_to_api(http_stream_event_msg_t *msg)
-{
-    if (msg == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    esp_http_client_handle_t http = (esp_http_client_handle_t)msg->http_client;
-    char len_buf[16];
-    int wlen = 0;
-
-    switch (msg->event_id) {
-        case HTTP_STREAM_PRE_REQUEST:
-            ESP_LOGI(TAG, "WIS HTTP client starting stream, waiting for end of speech");
-            esp_http_client_set_authtype(http, HTTP_AUTH_TYPE_BASIC);
-            esp_http_client_set_method(http, HTTP_METHOD_POST);
-            esp_http_client_set_timeout_ms(http, HTTP_STREAM_TIMEOUT_MS);
-            char *audio_codec = config_get_char("audio_codec", DEFAULT_AUDIO_CODEC);
-            char dat[10] = {0};
-            snprintf(dat, sizeof(dat), "%d", 16000);
-            esp_http_client_set_header(http, "x-audio-sample-rate", dat);
-            memset(dat, 0, sizeof(dat));
-            snprintf(dat, sizeof(dat), "%d", 16);
-            esp_http_client_set_header(http, "x-audio-bits", dat);
-            memset(dat, 0, sizeof(dat));
-            snprintf(dat, sizeof(dat), "%d", 1);
-            esp_http_client_set_header(http, "x-audio-channel", dat);
-            if (strcmp(audio_codec, "AMR-WB") == 0) {
-                esp_http_client_set_header(http, "x-audio-codec", "amrwb");
-            } else if (strcmp(audio_codec, "WAV") == 0) {
-                esp_http_client_set_header(http, "x-audio-codec", "wav");
-            } else if (strcmp(audio_codec, "PCM") == 0) {
-                esp_http_client_set_header(http, "x-audio-codec", "pcm");
-            }
-            free(audio_codec);
-            total_write = 0;
-            return ESP_OK;
-
-        case HTTP_STREAM_ON_REQUEST:
-            wlen = sprintf(len_buf, "%x\r\n", msg->buffer_len);
-            if (esp_http_client_write(http, len_buf, wlen) <= 0) {
-                return ESP_FAIL;
-            }
-            if (esp_http_client_write(http, msg->buffer, msg->buffer_len) <= 0) {
-                return ESP_FAIL;
-            }
-            if (esp_http_client_write(http, "\r\n", 2) <= 0) {
-                return ESP_FAIL;
-            }
-            total_write += msg->buffer_len;
-            // ESP_LOGI(TAG, "WIS HTTP client total bytes written: %d", total_write);
-            return msg->buffer_len;
-
-        case HTTP_STREAM_POST_REQUEST:
-            ESP_LOGI(TAG, "WIS HTTP client HTTP_STREAM_POST_REQUEST, write end chunked marker");
-            esp_http_client_set_timeout_ms(http, HTTP_STREAM_TIMEOUT_MS_POST_REQUEST);
-            if (esp_http_client_write(http, "0\r\n\r\n", 5) <= 0) {
-                return ESP_FAIL;
-            }
-            return ESP_OK;
-
-        case HTTP_STREAM_FINISH_REQUEST:
-            ESP_LOGI(TAG, "WIS HTTP client HTTP_STREAM_FINISH_REQUEST");
-            // bail out if we didn't win the multiwake race
-            if (!multiwake_won) {
-                goto pause;
-            }
-            // Check status code
-            int http_status = esp_http_client_get_status_code(http);
-            if (http_status != 200) {
-                // when ESP HTTP Client terminates connection due to timeout we get -1
-                if (http_status == -1) {
-                    ESP_LOGE(TAG, "WIS response took longer than %dms, connection aborted", HTTP_STREAM_TIMEOUT_MS);
-                    ui_pr_err("WIS timeout", "Check server performance");
-                } else if (http_status == 401) {
-                    ESP_LOGE(TAG, "WIS returned Unauthorized Access (HTTP 401)");
-                    ui_pr_err("WIS auth failed", "Check server & settings");
-                } else if (http_status == 406) {
-                    ESP_LOGE(TAG, "WIS returned Unauthorized Speaker");
-                    ui_pr_err("Unauthorized Speaker", NULL);
-                    war.fn_err("Unauthorized Speaker");
-                } else {
-                    ESP_LOGE(TAG, "WIS returned HTTP error: %d", http_status);
-                    char str_http_err[14];
-                    snprintf(str_http_err, 14, "WIS HTTP %d", http_status);
-                    ui_pr_err(str_http_err, NULL);
-                    war.fn_err(str_http_err);
-                }
-                return ESP_FAIL;
-            }
-            // Allocate memory for response. Should be enough?
-            char *buf = calloc(2048, sizeof(char));
-            assert(buf);
-            int read_len = esp_http_client_read(http, buf, 2048);
-            if (read_len <= 0) {
-                free(buf);
-                return ESP_FAIL;
-            }
-            buf[read_len] = 0;
-            ESP_LOGI(TAG, "WIS HTTP Response = %s", (char *)buf);
-            if (lvgl_port_lock(lvgl_lock_timeout)) {
-                lv_obj_add_flag(lbl_ln3, LV_OBJ_FLAG_HIDDEN);
-                lv_obj_add_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
-                lvgl_port_unlock();
-            }
-            bool was_mode = config_get_bool("was_mode", DEFAULT_WAS_MODE);
-            char *command_endpoint = config_get_char("command_endpoint", DEFAULT_COMMAND_ENDPOINT);
-            if (was_mode) {
-                was_send_endpoint(buf, false);
-            } else if (strcmp(command_endpoint, "Home Assistant") == 0) {
-                hass_send(buf);
-            } else if (strcmp(command_endpoint, "openHAB") == 0) {
-                openhab_send(buf);
-            } else if (strcmp(command_endpoint, "REST") == 0) {
-                rest_send(buf);
-            }
-            free(command_endpoint);
-
-            cJSON *cjson = cJSON_Parse(buf);
-            cJSON *text = cJSON_GetObjectItemCaseSensitive(cjson, "text");
-            cJSON *speaker_status = cJSON_GetObjectItemCaseSensitive(cjson, "speaker_status");
-
-            if (lvgl_port_lock(lvgl_lock_timeout)) {
-                lv_obj_clear_flag(lbl_ln1, LV_OBJ_FLAG_HIDDEN);
-                lv_obj_clear_flag(lbl_ln2, LV_OBJ_FLAG_HIDDEN);
-                if (cJSON_IsString(speaker_status) && speaker_status->valuestring != NULL) {
-                    lv_label_set_text(lbl_ln1, speaker_status->valuestring);
-                } else {
-                    lv_label_set_text(lbl_ln1, "I heard:");
-                }
-                if (cJSON_IsString(text) && text->valuestring != NULL) {
-                    lv_label_set_text(lbl_ln2, text->valuestring);
-                } else {
-                    lv_label_set_text(lbl_ln2, buf);
-                }
-                lvgl_port_unlock();
-            }
-
-            cJSON_Delete(cjson);
-            free(buf);
-
-pause:
-            audio_pipeline_pause(hdl_ap_to_api);
-
-            return ESP_OK;
-
-        default:
-            return ESP_ERR_INVALID_ARG;
-    }
-    return ESP_OK;
 }
 
 static esp_err_t init_ap_to_api(void)
@@ -956,16 +810,18 @@ static void at_read(void *data)
                     recording = true;
                     break;
                 case MSG_STOP:
-                    delay = portMAX_DELAY;
+                    delay = portMAX_DAY;
                     audio_element_set_ringbuf_done(hdl_ae_rs_to_api);
                     recording = false;
                     stream_to_api = false;
-                    if (lvgl_port_lock(lvgl_lock_timeout)) {
-                        lv_label_set_text_static(lbl_ln3, multiwake_won ? "Thinking..." : "WOW Active - Exiting");
-                        lv_obj_add_flag(btn_cancel, LV_OBJ_FLAG_HIDDEN);
-                        lvgl_port_unlock();
-                    }
-                    reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), false);
+                    // LVGL UI 관련 호출 제거
+                    // if (lvgl_port_lock(lvgl_lock_timeout)) {
+                    //     lv_label_set_text_static(lbl_ln3, multiwake_won ? "Thinking..." : "WOW Active - Exiting");
+                    //     lv_obj_add_flag(btn_cancel, LV_OBJ_FLAG_HIDDEN);
+                    //     lvgl_port_unlock();
+                    // }
+                    // 디스플레이 타이머 관련 호출 제거
+                    // reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), false);
                     break;
                 default:
                     printf("at_read(): invalid msg '%d'\n", msg);
@@ -978,7 +834,7 @@ static void at_read(void *data)
             ret = audio_recorder_data_read(hdl_ar, buf, len, portMAX_DELAY);
             if (ret <= 0) {
                 ESP_LOGD(TAG, "audio_recorder_data_read returned 0");
-                // delay = portMAX_DELAY;
+                // delay = portMAX_DAY;
                 // stream_to_api = false;
             } else {
                 raw_stream_write(hdl_ae_rs_to_api, buf, ret);
@@ -987,9 +843,9 @@ static void at_read(void *data)
             // we end up sending 1 fragment to AFE and another to the API
             // ret = raw_stream_read(hdl_ae_rs_from_i2s, (char *)buf, len);
             // if (ret <= 0) {
-            //     printf("at_read() ret <= 0\n");
-            //     delay = portMAX_DELAY;
-            //     return;
+            //      printf("at_read() ret <= 0\n");
+            //      delay = portMAX_DAY;
+            //      return;
             // }
             // printf("at_read() raw_stream_write()\n");
         }
@@ -1079,18 +935,21 @@ esp_err_t init_audio(void)
     }
     free(wake_word);
 
-    if (ld == NULL) {
-        ESP_LOGE(TAG, "lv_disp_t ld is NULL!!!!");
-    } else {
-        if (lvgl_port_lock(lvgl_lock_timeout)) {
-            lv_obj_add_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
-            lv_label_set_long_mode(lbl_ln1, LV_LABEL_LONG_SCROLL);
-            lv_label_set_long_mode(lbl_ln5, LV_LABEL_LONG_SCROLL);
-            lv_label_set_text(lbl_ln3, wake_help);
+    // LVGL UI 관련 호출 제거 (ld는 slvgl.h에서 제거되었으므로 더 이상 유효하지 않음)
+    // if (ld == NULL) {
+    //     ESP_LOGE(TAG, "lv_disp_t ld is NULL!!!!");
+    // } else {
+    //     if (lvgl_port_lock(lvgl_lock_timeout)) {
+    //         lv_obj_add_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
+    //         lv_label_set_long_mode(lbl_ln1, LV_LABEL_LONG_SCROLL);
+    //         lv_label_set_long_mode(lbl_ln5, LV_LABEL_LONG_SCROLL);
+    //         lv_label_set_text(lbl_ln3, wake_help);
+    //         lvgl_port_unlock();
+    //     }
+    // }
+    // 대신 콘솔에 wake_help 메시지를 출력
+    ESP_LOGI(TAG, "%s", wake_help);
 
-            lvgl_port_unlock();
-        }
-    }
 
     return ret;
 }
