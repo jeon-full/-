@@ -3,21 +3,21 @@
 #include "esp_err.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
-#include "esp_lvgl_port.h"
+// #include "esp_lvgl_port.h" // LVGL 포트 제거
 #include "esp_ota_ops.h"
 #include "esp_task_wdt.h"
 #include "esp_timer.h"
-#include "lvgl.h"
+// #include "lvgl.h" // LVGL 제거
 
 #include "audio.h"
 #include "config.h"
-#include "display.h"
+// #include "display.h" // 디스플레이 헤더 제거
 #include "endpoint/hass.h"
 #include "http.h"
 #include "shared.h"
-#include "slvgl.h"
+// #include "slvgl.h" // slvgl 헤더 제거
 #include "system.h"
-#include "timer.h"
+#include "timer.h" // 타이머 유지 (display_timer는 제거되지만, 다른 타이머 함수에 대한 의존성 있을 수 있음)
 #include "was.h"
 
 #define BUFSIZE 4096
@@ -151,37 +151,43 @@ void ota_task(void *data)
     }
 
     ESP_LOGI(TAG, "OTA completed, restarting");
-    if (lvgl_port_lock(lvgl_lock_timeout)) {
-        lv_label_set_text_static(lbl_ln3, "Upgrade Done");
-        lvgl_port_unlock();
-    }
+    // LVGL UI 관련 호출 제거
+    // if (lvgl_port_lock(lvgl_lock_timeout)) {
+    //     lv_label_set_text_static(lbl_ln3, "Upgrade Done");
+    //     lvgl_port_unlock();
+    // }
     restart_delayed();
 err:
     esp_ota_abort(hdl_ota);
     esp_http_client_close(hdl_hc);
     esp_http_client_cleanup(hdl_hc);
     ESP_LOGI(TAG, "OTA failed, restarting");
-    if (lvgl_port_lock(lvgl_lock_timeout)) {
-        lv_label_set_text_static(lbl_ln3, "Upgrade Failed");
-        lvgl_port_unlock();
-    }
+    // LVGL UI 관련 호출 제거
+    // if (lvgl_port_lock(lvgl_lock_timeout)) {
+    //     lv_label_set_text_static(lbl_ln3, "Upgrade Failed");
+    //     lvgl_port_unlock();
+    // }
     restart_delayed();
     vTaskDelete(NULL);
 }
 
 void ota_start(char *url)
 {
-    reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), true);
-    if (lvgl_port_lock(lvgl_lock_timeout)) {
-        lv_obj_add_flag(lbl_ln1, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(lbl_ln2, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(lbl_ln5, LV_OBJ_FLAG_HIDDEN);
-        lv_label_set_text_static(lbl_ln3, "Starting Upgrade");
-        lv_obj_clear_flag(lbl_ln3, LV_OBJ_FLAG_HIDDEN);
-        lvgl_port_unlock();
-    }
-    display_set_backlight(true, false);
+    // 디스플레이 타이머 관련 호출 제거
+    // reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), true);
+    // LVGL UI 관련 호출 제거
+    // if (lvgl_port_lock(lvgl_lock_timeout)) {
+    //     lv_obj_add_flag(lbl_ln1, LV_OBJ_FLAG_HIDDEN);
+    //     lv_obj_add_flag(lbl_ln2, LV_OBJ_FLAG_HIDDEN);
+    //     lv_obj_add_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
+    //     lv_obj_add_flag(lbl_ln5, LV_OBJ_FLAG_HIDDEN);
+    //     lv_label_set_text_static(lbl_ln3, "Starting Upgrade");
+    //     lv_obj_clear_flag(lbl_ln3, LV_OBJ_FLAG_HIDDEN);
+    //     lvgl_port_unlock();
+    // }
+    // 백라이트 제어 제거
+    // display_set_backlight(true, false);
+    ESP_LOGI(TAG, "Starting Upgrade"); // 콘솔 로깅으로 대체
 
     deinit_audio();
     deinit_hass();
