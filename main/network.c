@@ -1,18 +1,18 @@
 #include "esp_log.h"
-#include "esp_lvgl_port.h"
+// #include "esp_lvgl_port.h" // LVGL 포트 제거
 #include "esp_mac.h"
 #include "esp_netif.h"
 #include "esp_netif_sntp.h"
 #include "esp_sntp.h"
 #include "esp_wifi.h"
-#include "lvgl.h"
+// #include "lvgl.h" // LVGL 제거
 #include "lwip/ip_addr.h"
 #include "sdkconfig.h"
 
 #include "config.h"
 #include "network.h"
 #include "shared.h"
-#include "slvgl.h"
+// #include "slvgl.h" // slvgl 제거
 #include "system.h"
 
 #define DEFAULT_NTP_CONFIG "Host"
@@ -188,12 +188,15 @@ esp_err_t init_wifi(const char *psk, const char *ssid)
     }
 
     // Start wifi
-    if (lvgl_port_lock(lvgl_lock_timeout)) {
-        lv_obj_clear_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_set_style_text_align(lbl_ln4, LV_TEXT_ALIGN_CENTER, 0);
-        lv_label_set_text_static(lbl_ln4, "Connecting to Wi-Fi...");
-        lvgl_port_unlock();
-    }
+    // if (lvgl_port_lock(lvgl_lock_timeout)) { // <-- 제거 대상
+    //     lv_obj_clear_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN); // <-- 제거 대상
+    //     lv_obj_set_style_text_align(lbl_ln4, LV_TEXT_ALIGN_CENTER, 0); // <-- 제거 대상
+    //     lv_label_set_text_static(lbl_ln4, "Connecting to Wi-Fi..."); // <-- 제거 대상
+    //     lvgl_port_unlock(); // <-- 제거 대상
+    // }
+    // 대신 콘솔 로그를 출력합니다.
+    ESP_LOGI(TAG, "Connecting to Wi-Fi...");
+
 
     wifi_init_config_t cfg_wi = WIFI_INIT_CONFIG_DEFAULT();
     ret = esp_wifi_init(&cfg_wi);
@@ -218,12 +221,6 @@ esp_err_t init_wifi(const char *psk, const char *ssid)
     ret = esp_wifi_set_config(ESP_IF_WIFI_STA, &cfg_wifi);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "failed to set Wi-Fi config: %s", esp_err_to_name(ret));
-        return ret;
-    }
-
-    ret = esp_wifi_start();
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "failed to start Wi-Fi: %s", esp_err_to_name(ret));
         return ret;
     }
 
