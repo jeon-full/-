@@ -3,23 +3,23 @@
 #include "esp_netif.h"
 #include "esp_ota_ops.h"
 #include "esp_timer.h"
-#include "lvgl.h"
+// #include "lvgl.h" // LVGL 라이브러리 제거
 #include "nvs_flash.h"
 #include "periph_spiffs.h"
 #include "sdkconfig.h"
 
 #include "audio.h"
 #include "config.h"
-#include "display.h"
+// #include "display.h" // display.h의 함수들은 이제 stub이므로 직접 호출은 가능
 #include "input.h"
 #include "log.h"
 #include "network.h"
 #include "shared.h"
-#include "slvgl.h"
+// #include "slvgl.h" // slvgl.h 제거
 #include "system.h"
 #include "tasks.h"
 #include "timer.h"
-#include "ui.h"
+#include "ui.h" // UI는 이제 콘솔 로깅 전용
 #include "was.h"
 
 #include "endpoint/hass.h"
@@ -34,7 +34,7 @@
 
 #define DEFAULT_WIS_URL "https://infer.tovera.io/api/willow"
 
-#define I2S_PORT       I2S_NUM_0
+#define I2S_PORT        I2S_NUM_0
 #define PARTLABEL_USER "user"
 
 char was_url[2048];
@@ -82,9 +82,9 @@ void app_main(void)
     init_system();
     init_spiffs_user();
     config_parse();
-    init_display();
-    init_lvgl_display();
-    init_ui();
+    // init_display();        // 디스플레이 초기화 제거
+    // init_lvgl_display();   // LVGL 디스플레이 초기화 제거
+    init_ui();             // UI 기능은 콘솔 로깅 전용으로 변경됨
 
     ESP_ERROR_CHECK(esp_netif_init());
 
@@ -175,8 +175,8 @@ err_nvs:
     init_buttons();
     init_input_key_service();
     init_audio();
-    init_lvgl_touch();
-    init_display_timer();
+    // init_lvgl_touch();     // LVGL 터치 초기화 제거
+    // init_display_timer();  // 디스플레이 타이머 초기화 제거 (타이머 핸들은 timer.h에서 제거 됨)
 
 #ifndef CONFIG_WILLOW_ETHERNET
     get_mac_address(); // should be on wifi by now; print the MAC
@@ -191,8 +191,7 @@ err_nvs:
     // we can also still crash in the while loop below - this should be improved
     ESP_ERROR_CHECK_WITHOUT_ABORT(esp_ota_mark_app_valid_cancel_rollback());
 
-    ESP_ERROR_CHECK_WITHOUT_ABORT(
-        reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), false));
+    // reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), false)); // hdl_display_timer 제거
 
 #ifdef CONFIG_WILLOW_DEBUG_RUNTIME_STATS
     xTaskCreate(&task_debug_runtime_stats, "dbg_runtime_stats", 4 * 1024, NULL, 0, NULL);
