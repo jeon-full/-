@@ -1,25 +1,25 @@
 #include "board.h"
 #include "cJSON.h"
 #include "esp_log.h"
-#include "esp_lvgl_port.h"
+// #include "esp_lvgl_port.h" // LVGL 포트 제거
 #include "esp_mac.h"
 #include "esp_netif.h"
 #include "esp_timer.h"
 #include "esp_transport_ws.h"
 #include "esp_websocket_client.h"
-#include "lvgl.h"
+// #include "lvgl.h" // LVGL 제거
 #include "nvs_flash.h"
 
 #include "audio.h"
 #include "config.h"
-#include "display.h"
+// #include "display.h" // 디스플레이 헤더 제거
 #include "network.h"
 #include "ota.h"
 #include "shared.h"
-#include "slvgl.h"
+// #include "slvgl.h" // slvgl 헤더 제거
 #include "system.h"
-#include "timer.h"
-#include "ui.h"
+#include "timer.h" // 타이머 유지 (display_timer는 제거되지만, 세션 타이머는 유지)
+#include "ui.h" // ui_pr_err를 위해 유지
 #include "was.h"
 
 #define WAS_RECONNECT_TIMEOUT_MS 10 * 1000
@@ -33,12 +33,12 @@ esp_netif_t *hdl_netif;
 struct notify_data {
     uint64_t id;
     char *audio_url;
-    bool backlight;
-    bool backlight_max;
+    bool backlight; // 디스플레이 없음에도 불구하고 WAS에서 데이터를 보낼 수 있으므로 구조체 멤버 유지
+    bool backlight_max; // 디스플레이 없음에도 불구하고 WAS에서 데이터를 보낼 수 있으므로 구조체 멤버 유지
     bool cancel;
     char *text;
     int repeat;
-    int strobe_period_ms;
+    int strobe_period_ms; // 디스플레이 없음에도 불구하고 WAS에서 데이터를 보낼 수 있으므로 구조체 멤버 유지
     int volume;
 };
 
@@ -46,7 +46,7 @@ static void notify_task(void *data);
 static void send_hello_goodbye(const char *type);
 
 static void IRAM_ATTR cb_ws_event(const void *arg_evh, const esp_event_base_t *base_ev, const int32_t id_ev,
-                                  const void *ev_data)
+                                   const void *ev_data)
 {
     esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)ev_data;
     // components/esp_websocket_client/include/esp_websocket_client.h - enum esp_websocket_event_id_t
@@ -57,11 +57,12 @@ static void IRAM_ATTR cb_ws_event(const void *arg_evh, const esp_event_base_t *b
             if (!config_valid) {
                 request_config();
             }
-            if (lvgl_port_lock(lvgl_lock_timeout)) {
-                lv_obj_add_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
-                lv_obj_set_style_text_align(lbl_ln4, LV_TEXT_ALIGN_LEFT, 0);
-                lvgl_port_unlock();
-            }
+            // LVGL UI 관련 호출 제거
+            // if (lvgl_port_lock(lvgl_lock_timeout)) {
+            //     lv_obj_add_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
+            //     lv_obj_set_style_text_align(lbl_ln4, LV_TEXT_ALIGN_LEFT, 0);
+            //     lvgl_port_unlock();
+            // }
             break;
         case WEBSOCKET_EVENT_DATA:
             ESP_LOGV(TAG, "WebSocket data received");
@@ -92,26 +93,23 @@ static void IRAM_ATTR cb_ws_event(const void *arg_evh, const esp_event_base_t *b
                     cJSON *ok = cJSON_GetObjectItemCaseSensitive(json_result, "ok");
                     if (ok != NULL && cJSON_IsBool(ok)) {
                         cJSON *speech = cJSON_GetObjectItemCaseSensitive(json_result, "speech");
-                        if (lvgl_port_lock(lvgl_lock_timeout)) {
-                            lv_obj_clear_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
-                            lv_obj_clear_flag(lbl_ln5, LV_OBJ_FLAG_HIDDEN);
-                            lv_obj_set_style_text_align(lbl_ln4, LV_TEXT_ALIGN_LEFT, 0);
-                            lv_obj_set_style_text_align(lbl_ln5, LV_TEXT_ALIGN_LEFT, 0);
-                            lv_obj_remove_event_cb(lbl_ln4, cb_btn_cancel);
-                            if (cJSON_IsString(speech) && speech->valuestring != NULL
-                                && strlen(speech->valuestring) > 0) {
+                        // LVGL UI 관련 호출 제거 및 콘솔 로깅으로 대체
+                        // if (lvgl_port_lock(lvgl_lock_timeout)) {
+                        //     lv_obj_clear_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
+                        //     lv_obj_clear_flag(lbl_ln5, LV_OBJ_FLAG_HIDDEN);
+                        //     lv_obj_set_style_text_align(lbl_ln4, LV_TEXT_ALIGN_LEFT, 0);
+                        //     lv_obj_set_style_text_align(lbl_ln5, LV_TEXT_ALIGN_LEFT, 0);
+                        //     lv_obj_remove_event_cb(lbl_ln4, cb_btn_cancel);
+                            if (cJSON_IsString(speech) && speech->valuestring != NULL && strlen(speech->valuestring) > 0) {
                                 cJSON_IsTrue(ok) ? war.fn_ok(speech->valuestring) : war.fn_err(speech->valuestring);
-                                lv_label_set_text_static(lbl_ln4, "Response:");
-                                lv_label_set_text(lbl_ln5, speech->valuestring);
+                                ESP_LOGI(TAG, "Response: %s", speech->valuestring);
                             } else {
                                 cJSON_IsTrue(ok) ? war.fn_ok("Success") : war.fn_err("Error");
-                                lv_label_set_text_static(lbl_ln4, "Command status:");
-                                lv_label_set_text(lbl_ln5, cJSON_IsTrue(ok) ? "Success!" : "Error");
+                                ESP_LOGI(TAG, "Command status: %s", cJSON_IsTrue(ok) ? "Success!" : "Error");
                             }
-                            lvgl_port_unlock();
-                            reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT),
-                                        false);
-                        }
+                        //     lvgl_port_unlock();
+                        //     reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), false);
+                        // }
                     }
                     goto cleanup;
                 }
@@ -184,17 +182,20 @@ static void IRAM_ATTR cb_ws_event(const void *arg_evh, const esp_event_base_t *b
                     }
 
                     ESP_LOGI(TAG, "restarting to apply NVS changes");
-                    if (lvgl_port_lock(lvgl_lock_timeout)) {
-                        lv_label_set_text_static(lbl_ln3, "Connectivity Updated");
-                        lv_obj_add_flag(lbl_ln1, LV_OBJ_FLAG_HIDDEN);
-                        lv_obj_add_flag(lbl_ln2, LV_OBJ_FLAG_HIDDEN);
-                        lv_obj_add_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
-                        lv_obj_add_flag(lbl_ln5, LV_OBJ_FLAG_HIDDEN);
-                        lv_obj_clear_flag(lbl_ln3, LV_OBJ_FLAG_HIDDEN);
-                        lvgl_port_unlock();
-                    }
-                    reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), true);
-                    display_set_backlight(true, false);
+                    // LVGL UI 관련 호출 제거
+                    // if (lvgl_port_lock(lvgl_lock_timeout)) {
+                    //     lv_label_set_text_static(lbl_ln3, "Connectivity Updated");
+                    //     lv_obj_add_flag(lbl_ln1, LV_OBJ_FLAG_HIDDEN);
+                    //     lv_obj_add_flag(lbl_ln2, LV_OBJ_FLAG_HIDDEN);
+                    //     lv_obj_add_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
+                    //     lv_obj_add_flag(lbl_ln5, LV_OBJ_FLAG_HIDDEN);
+                    //     lv_obj_clear_flag(lbl_ln3, LV_OBJ_FLAG_HIDDEN);
+                    //     lvgl_port_unlock();
+                    // }
+                    // 디스플레이 타이머 관련 호출 제거
+                    // reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), true);
+                    // 백라이트 제어 제거
+                    // display_set_backlight(true, false);
                     deinit_was();
                     restart_delayed();
                 }
@@ -317,16 +318,18 @@ static void IRAM_ATTR cb_ws_event(const void *arg_evh, const esp_event_base_t *b
 
                     if (strcmp(json_cmd->valuestring, "restart") == 0) {
                         ESP_LOGI(TAG, "restart command received. restart");
-                        if (lvgl_port_lock(lvgl_lock_timeout)) {
-                            lv_label_set_text_static(lbl_ln3, "WAS Restart");
-                            lv_obj_add_flag(lbl_ln1, LV_OBJ_FLAG_HIDDEN);
-                            lv_obj_add_flag(lbl_ln2, LV_OBJ_FLAG_HIDDEN);
-                            lv_obj_add_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
-                            lv_obj_add_flag(lbl_ln5, LV_OBJ_FLAG_HIDDEN);
-                            lv_obj_clear_flag(lbl_ln3, LV_OBJ_FLAG_HIDDEN);
-                            lvgl_port_unlock();
-                        }
-                        display_set_backlight(true, false);
+                        // LVGL UI 관련 호출 제거
+                        // if (lvgl_port_lock(lvgl_lock_timeout)) {
+                        //     lv_label_set_text_static(lbl_ln3, "WAS Restart");
+                        //     lv_obj_add_flag(lbl_ln1, LV_OBJ_FLAG_HIDDEN);
+                        //     lv_obj_add_flag(lbl_ln2, LV_OBJ_FLAG_HIDDEN);
+                        //     lv_obj_add_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
+                        //     lv_obj_add_flag(lbl_ln5, LV_OBJ_FLAG_HIDDEN);
+                        //     lv_obj_clear_flag(lbl_ln3, LV_OBJ_FLAG_HIDDEN);
+                        //     lvgl_port_unlock();
+                        // }
+                        // 백라이트 제어 제거
+                        // display_set_backlight(true, false);
                         deinit_was();
                         restart_delayed();
                     }
@@ -394,12 +397,15 @@ esp_err_t init_was(void)
     };
     esp_err_t err = ESP_OK;
 
-    if (lvgl_port_lock(lvgl_lock_timeout)) {
-        lv_obj_clear_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_set_style_text_align(lbl_ln4, LV_TEXT_ALIGN_CENTER, 0);
-        lv_label_set_text_static(lbl_ln4, "Connecting to WAS...");
-        lvgl_port_unlock();
-    }
+    // LVGL UI 관련 호출 제거
+    // if (lvgl_port_lock(lvgl_lock_timeout)) {
+    //     lv_obj_clear_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
+    //     lv_obj_set_style_text_align(lbl_ln4, LV_TEXT_ALIGN_CENTER, 0);
+    //     lv_label_set_text_static(lbl_ln4, "Connecting to WAS...");
+    //     lvgl_port_unlock();
+    // }
+    ESP_LOGI(TAG, "Connecting to WAS..."); // 콘솔 로깅으로 대체
+
 
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
     ESP_LOGI(TAG, "initializing WebSocket client (%s)", was_url);
@@ -640,16 +646,17 @@ cleanup:
     cJSON_Delete(cjson);
 }
 
-void cb_btn_cancel_notify(lv_event_t *ev)
-{
-    ESP_LOGD(TAG, "btn_cancel pressed");
-    esp_audio_stop(hdl_ea, TERMINATION_TYPE_NOW);
-    notify_active->cancel = true;
-}
+// 이 함수는 cb_btn_cancel_notify와 함께 slvgl.h에서 제거되었으므로 제거
+// void cb_btn_cancel_notify(lv_event_t *ev)
+// {
+//     ESP_LOGD(TAG, "btn_cancel pressed");
+//     esp_audio_stop(hdl_ea, TERMINATION_TYPE_NOW);
+//     notify_active->cancel = true;
+// }
 
 static void notify_task(void *data)
 {
-    TaskHandle_t hdl_task_strobe = NULL;
+    // TaskHandle_t hdl_task_strobe = NULL; // 스트로브 태스크 관련 변수 제거
     cJSON *cjson = NULL;
     char *json = NULL;
     esp_err_t ret;
@@ -665,33 +672,42 @@ static void notify_task(void *data)
 
     ESP_LOGI(TAG, "started notify task for notification with ID='%" PRIu64 "'", nd->id);
 
-    if (lvgl_port_lock(lvgl_lock_timeout)) {
-        if (nd->text == NULL) {
-            lv_label_set_text_static(lbl_ln3, "Notification Active");
-        } else {
-            lv_label_set_text(lbl_ln3, nd->text);
-            free(nd->text);
-        }
-        lv_obj_remove_event_cb(btn_cancel, cb_btn_cancel);
-        lv_obj_add_flag(lbl_ln1, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(lbl_ln2, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(lbl_ln5, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_event_cb(btn_cancel, cb_btn_cancel_notify, LV_EVENT_PRESSED, NULL);
-        lv_obj_clear_flag(lbl_ln3, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(btn_cancel, LV_OBJ_FLAG_HIDDEN);
-        lv_label_set_long_mode(lbl_ln3, LV_LABEL_LONG_SCROLL);
-        lvgl_port_unlock();
+    // LVGL UI 관련 호출 제거 및 콘솔 로깅으로 대체
+    // if (lvgl_port_lock(lvgl_lock_timeout)) {
+    //     if (nd->text == NULL) {
+    //         lv_label_set_text_static(lbl_ln3, "Notification Active");
+    //     } else {
+    //         lv_label_set_text(lbl_ln3, nd->text);
+    //         free(nd->text);
+    //     }
+    //     lv_obj_remove_event_cb(btn_cancel, cb_btn_cancel);
+    //     lv_obj_add_flag(lbl_ln1, LV_OBJ_FLAG_HIDDEN);
+    //     lv_obj_add_flag(lbl_ln2, LV_OBJ_FLAG_HIDDEN);
+    //     lv_obj_add_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
+    //     lv_obj_add_flag(lbl_ln5, LV_OBJ_FLAG_HIDDEN);
+    //     lv_obj_add_event_cb(btn_cancel, cb_btn_cancel_notify, LV_EVENT_PRESSED, NULL);
+    //     lv_obj_clear_flag(lbl_ln3, LV_OBJ_FLAG_HIDDEN);
+    //     lv_obj_clear_flag(btn_cancel, LV_OBJ_FLAG_HIDDEN);
+    //     lv_label_set_long_mode(lbl_ln3, LV_LABEL_LONG_SCROLL);
+    //     lvgl_port_unlock();
+    // }
+    ESP_LOGI(TAG, "Notification Active: %s", nd->text ? nd->text : "No text provided");
+    if (nd->text) { // nd->text는 notify_task에서 사용 후 free 되므로, 여기에 남겨둠
+        free(nd->text);
+        nd->text = NULL;
     }
 
-    reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), true);
-    display_set_backlight(nd->backlight, nd->backlight_max);
 
-    if (nd->strobe_period_ms > 0) {
-        willow_strobe_parms_t *wsp = (willow_strobe_parms_t *)calloc(1, sizeof(willow_strobe_parms_t));
-        wsp->period_ms = nd->strobe_period_ms;
-        xTaskCreatePinnedToCore(display_backlight_strobe_task, "strobe_task", 2048, wsp, 5, &hdl_task_strobe, 0);
-    }
+    // 디스플레이 타이머 관련 호출 제거
+    // reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), true);
+    // 백라이트 제어 및 스트로브 태스크 관련 호출 제거
+    // display_set_backlight(nd->backlight, nd->backlight_max);
+
+    // if (nd->strobe_period_ms > 0) {
+    //     willow_strobe_parms_t *wsp = (willow_strobe_parms_t *)calloc(1, sizeof(willow_strobe_parms_t));
+    //     wsp->period_ms = nd->strobe_period_ms;
+    //     xTaskCreatePinnedToCore(display_backlight_strobe_task, "strobe_task", 2048, wsp, 5, &hdl_task_strobe, 0);
+    // }
 
     if (nd->audio_url != NULL) {
         if (hdl_ea == NULL) {
@@ -719,21 +735,24 @@ static void notify_task(void *data)
         }
     }
 
-    if (lvgl_port_lock(lvgl_lock_timeout)) {
-        lv_obj_add_flag(btn_cancel, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_remove_event_cb(btn_cancel, cb_btn_cancel_notify);
-        lvgl_port_unlock();
-    }
+    // LVGL UI 관련 호출 제거
+    // if (lvgl_port_lock(lvgl_lock_timeout)) {
+    //     lv_obj_add_flag(btn_cancel, LV_OBJ_FLAG_HIDDEN);
+    //     lv_obj_remove_event_cb(btn_cancel, cb_btn_cancel_notify);
+    //     lvgl_port_unlock();
+    // }
 
-    reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), false);
+    // 디스플레이 타이머 관련 호출 제거
+    // reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), false);
 
 out:
-    if (hdl_task_strobe != NULL) {
-        vTaskDelete(hdl_task_strobe);
-        display_set_backlight(true, false);
-    }
+    // 스트로브 태스크 관련 코드 제거
+    // if (hdl_task_strobe != NULL) {
+    //     vTaskDelete(hdl_task_strobe);
+    //     display_set_backlight(true, false);
+    // }
 
-    if (nd->id == 1) {
+    if (nd->id == 1) { // <-- 식별 명령 (identify)에 대한 notify_done 스킵
         goto skip_notify_done;
     }
 
