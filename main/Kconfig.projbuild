@@ -3,14 +3,14 @@ menu "Willow Configuration"
 config WIFI_SSID
     string "WiFi SSID"
     depends on !WILLOW_ETHERNET
-    default "myssid"
+    default "myssid" #여기에 사용할 WIFI ssid를 입력
     help
         SSID (network name) for Willow to connect to.
 
 config WIFI_PASSWORD
     string "WiFi Password"
     depends on !WILLOW_ETHERNET
-    default "mypassword"
+    default "mypassword" #여기에 wifi 패스워드 입력
     help
         WiFi password (WPA, WPA2, WPA3) for Willow to use.
 
