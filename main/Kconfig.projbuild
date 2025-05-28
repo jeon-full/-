@@ -18,7 +18,7 @@ config WIFI_PASSWORD
 
 config WILLOW_WAS_URL
     string "Willow Application Server URL"
-    default "wss://was.local"
+    default "wss://was.local" # WAS가 설치된 서버의 IP 주소와 포트로 변경
     help
         URL for your WAS instance. Supports WS and WSS.
 
