@@ -4,20 +4,20 @@
 #include <sys/stat.h>
 
 #include "esp_log.h"
-#include "esp_lvgl_port.h"
+// #include "esp_lvgl_port.h" // LVGL 포트 제거
 #include "esp_spiffs.h"
 #include "esp_system.h"
 #include "esp_timer.h"
-#include "lvgl.h"
+// #include "lvgl.h" // LVGL 제거
 
 #include "audio.h"
 #include "config.h"
-#include "display.h"
+// #include "display.h" // 디스플레이 헤더 제거
 #include "endpoint/hass.h"
 #include "shared.h"
-#include "slvgl.h"
+// #include "slvgl.h" // slvgl 헤더 제거
 #include "system.h"
-#include "timer.h"
+#include "timer.h" // 타이머 헤더 유지 (display_timer는 제거되지만, session_timer와 연결될 수 있음)
 #include "was.h"
 
 #define CONFIG_PATH "/spiffs/user/config/willow.json"
@@ -146,16 +146,17 @@ close:
     fclose(f);
 
     ESP_LOGI(TAG, "%s updated, restarting", CONFIG_PATH);
-    if (lvgl_port_lock(lvgl_lock_timeout)) {
-        lv_label_set_text_static(lbl_ln3, "Configuration Updated");
-        lv_obj_add_flag(lbl_ln1, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(lbl_ln2, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(lbl_ln5, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(lbl_ln3, LV_OBJ_FLAG_HIDDEN);
-        lvgl_port_unlock();
-    }
-    reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), true);
-    display_set_backlight(true, false);
+    // 디스플레이 관련 UI 업데이트 및 타이머, 백라이트 제어 제거
+    // if (lvgl_port_lock(lvgl_lock_timeout)) {
+    //     lv_label_set_text_static(lbl_ln3, "Configuration Updated");
+    //     lv_obj_add_flag(lbl_ln1, LV_OBJ_FLAG_HIDDEN);
+    //     lv_obj_add_flag(lbl_ln2, LV_OBJ_FLAG_HIDDEN);
+    //     lv_obj_add_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
+    //     lv_obj_add_flag(lbl_ln5, LV_OBJ_FLAG_HIDDEN);
+    //     lv_obj_clear_flag(lbl_ln3, LV_OBJ_FLAG_HIDDEN);
+    //     lvgl_port_unlock();
+    // }
+    // reset_timer(hdl_display_timer, config_get_int("display_timeout", DEFAULT_DISPLAY_TIMEOUT), true);
+    // display_set_backlight(true, false);
     restart_delayed();
 }
