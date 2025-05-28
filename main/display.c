@@ -1,126 +1,43 @@
-#include "board.h"
-#include "driver/ledc.h"
-#include "esp_log.h"
-#include "esp_lvgl_port.h"
+// #include "board.h" // LCD_CTRL_GPIO 정의를 위해 남겨둘 수 있지만, LEDC 사용 안하므로 불필요
+// #include "driver/ledc.h" // LEDC를 사용하여 백라이트 제어하므로 필요없음
+#include "esp_log.h" // 로그를 위해 필요
+// #include "esp_lvgl_port.h" // LVGL 관련이므로 제거
 
-#include "config.h"
-#include "display.h"
-#include "system.h"
+#include "config.h" // config_get_int를 위해 필요
+#include "display.h" // 이 파일의 헤더이므로 필요
+#include "system.h" // hw_type, str_hw_type을 위해 필요
 
-#define DEFAULT_LCD_BRIGHTNESS 700
-#define MIN_STROBE_PERIOD      20
+// 디스플레이가 없으므로 백라이트 제어 관련 정의 및 변수 대부분은 제거
+// #define DEFAULT_LCD_BRIGHTNESS 700
+// #define MIN_STROBE_PERIOD      20
 
 static const char *TAG = "WILLOW/DISPLAY";
-static int bl_duty_max;
-static int bl_duty_off;
-static int bl_duty_on;
-enum willow_hw_t hw_type;
+// static int bl_duty_max; // 제거
+// static int bl_duty_off; // 제거
+// static int bl_duty_on; // 제거
+enum willow_hw_t hw_type; // system.h에서 extern으로 선언되어 있으므로 제거 필요 없음
 
 esp_err_t init_display(void)
 {
-    ESP_LOGD(TAG, "initializing display");
-
-    switch (hw_type) {
-        case WILLOW_HW_ESP32_S3_BOX_LITE:
-            bl_duty_max = 0;
-            bl_duty_off = 1023;
-            bl_duty_on = bl_duty_off - config_get_int("lcd_brightness", DEFAULT_LCD_BRIGHTNESS);
-            break;
-        case WILLOW_HW_MAX:
-            ESP_LOGW(TAG, "unsupported hardware");
-            __attribute__((fallthrough));
-        case WILLOW_HW_UNSUPPORTED:
-            __attribute__((fallthrough));
-        case WILLOW_HW_ESP32_S3_BOX:
-            __attribute__((fallthrough));
-        case WILLOW_HW_ESP32_S3_BOX_3:
-            bl_duty_max = 1023;
-            bl_duty_off = 0;
-            bl_duty_on = config_get_int("lcd_brightness", DEFAULT_LCD_BRIGHTNESS);
-            break;
-    }
-
-    ESP_LOGD(TAG, "bl_duty_on=%d bl_duty_off=%d", bl_duty_on, bl_duty_off);
-
-    const ledc_channel_config_t cfg_bl_channel = {
-        .channel = LEDC_CHANNEL_1,
-        .duty = bl_duty_on,
-        .gpio_num = LCD_CTRL_GPIO,
-        .hpoint = 0,
-        .intr_type = LEDC_INTR_DISABLE,
-        .speed_mode = LEDC_LOW_SPEED_MODE,
-        .timer_sel = 1,
-    };
-
-    const ledc_timer_config_t cfg_bl_timer = {
-        .clk_cfg = LEDC_AUTO_CLK,
-        .duty_resolution = LEDC_TIMER_10_BIT,
-        .freq_hz = 5000,
-        .speed_mode = LEDC_LOW_SPEED_MODE,
-        .timer_num = 1,
-    };
-
-    int ret = ESP_OK;
-
-    hdl_lcd = (esp_lcd_panel_handle_t)audio_board_lcd_init(hdl_pset, NULL);
-    ret = esp_lcd_panel_disp_on_off(hdl_lcd, true);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "failed to turn of display: %s", esp_err_to_name(ret));
-        return ret;
-    }
-
-    ret = ledc_timer_config(&cfg_bl_timer);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "failed to config LEDC timer for display backlight: %s", esp_err_to_name(ret));
-        return ret;
-    }
-
-    ret = ledc_channel_config(&cfg_bl_channel);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "failed to config LEDC channel for display backlight: %s", esp_err_to_name(ret));
-        return ret;
-    }
-
-    ret = ledc_fade_func_install(0);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "failed to install LEDC fade function: %s", esp_err_to_name(ret));
-        return ret;
-    }
-
-    return ret;
+    ESP_LOGD(TAG, "Display is not used. Skipping initialization.");
+    return ESP_OK; // 디스플레이 초기화를 건너뛰고 성공 반환
 }
 
 void display_set_backlight(const bool on, const bool max)
 {
-    int duty;
-
-    if (on) {
-        duty = max ? bl_duty_max : bl_duty_on;
-    } else {
-        duty = bl_duty_off;
-    }
-    ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, duty, 0);
+    // 디스플레이 백라이트가 없으므로 아무 작업도 하지 않음
+    ESP_LOGD(TAG, "Display backlight control is not enabled.");
+    (void)on; // 사용되지 않는 변수 경고 억제
+    (void)max; // 사용되지 않는 변수 경고 억제
 }
 
 void display_backlight_strobe_task(void *data)
 {
-    int period_ms = MIN_STROBE_PERIOD;
-    willow_strobe_parms_t *wsp = (willow_strobe_parms_t *)data;
-
-    if (wsp->period_ms >= MIN_STROBE_PERIOD) {
-        period_ms = wsp->period_ms;
+    // 디스플레이 백라이트 스트로브 기능이 없으므로 태스크를 바로 종료
+    ESP_LOGD(TAG, "Display backlight strobe task is not enabled. Deleting task.");
+    // 할당된 메모리 해제 (willow_strobe_parms_t)
+    if (data != NULL) {
+        free(data);
     }
-    // this has the potential to leak if the task is deleted before we reach here
-    free(wsp);
-
-    ESP_LOGI(TAG, "starting display backlight strobe effect with period '%d'", period_ms);
-
-    while (true) {
-        display_set_backlight(true, true);
-        vTaskDelay(period_ms / portTICK_PERIOD_MS);
-        display_set_backlight(false, false);
-        vTaskDelay(period_ms / portTICK_PERIOD_MS);
-    }
-
     vTaskDelete(NULL);
 }
