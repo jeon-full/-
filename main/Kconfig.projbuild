@@ -10,7 +10,7 @@ config WIFI_SSID
 config WIFI_PASSWORD
     string "WiFi Password"
     depends on !WILLOW_ETHERNET
-    default "mypassword" #여기에 wifi 패스워드 입력
+    default "mypassword" #여기에 wifi 패스워드 입력, 비밀번호 없으면 비우면됨
     help
         WiFi password (WPA, WPA2, WPA3) for Willow to use.
 
