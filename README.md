@@ -1,9 +1,11 @@
-# -
-윌로우 변형
+# The Willow Inference Server has been released!
 
+Willow users can now self-host the [Willow Inference Server](https://github.com/toverainc/willow-inference-server) for lightning-fast language inference tasks with Willow and other applications (even WebRTC) including STT, TTS, LLM, and more!
 
-esp32 기반 음성 인식 대답 소스 입니다. 
+# Hello Willow Users!
 
-윌로우를 기반으로 외부 서버와 연동되어 답변하는 구조 
+Many users across various forums, social media, etc are starting to receive their hardware! I have enabled Github [discussions](https://github.com/toverainc/willow/discussions) to centralize these great conversations - stop by, introduce yourself, and let us know how things are going with Willow! Between Github discussions and issues we can all work together to make sure our early adopters have the best experience possible!
 
-자체 서버 구축 필요
+# Documentation
+
+Visit official documentation on [heywillow.io](https://heywillow.io).
