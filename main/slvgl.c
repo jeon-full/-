@@ -1,14 +1,14 @@
 #include "board.h"
 #include "driver/ledc.h"
 #include "esp_err.h"
-#include "esp_lcd_panel_ops.h"
-#include "esp_lcd_touch_gt911.h"
-#include "esp_lcd_touch_tt21100.h"
+#include "esp_lcd_panel_ops.h" // LCD 패널 관련
+#include "esp_lcd_touch_gt911.h" // GT911 터치 드라이버
+#include "esp_lcd_touch_tt21100.h" // TT21100 터치 드라이버
 #include "esp_log.h"
-#include "esp_lvgl_port.h"
+#include "esp_lvgl_port.h" // LVGL 포트
 #include "esp_timer.h"
-#include "lvgl.h"
-#include "periph_lcd.h"
+#include "lvgl.h" // LVGL 라이브러리
+#include "periph_lcd.h" // LCD 주변장치
 
 #include "audio.h"
 #include "config.h"
@@ -49,7 +49,7 @@ int lvgl_lock_timeout;
 lv_disp_t *ld;
 lv_obj_t *btn_cancel, *lbl_btn_cancel, *lbl_ln1, *lbl_ln2, *lbl_ln3, *lbl_ln4, *lbl_ln5;
 
-static periph_lcd_t *lcdp;
+static periph_lcd_t *lcdp; // LCD 주변장치 핸들 (LVGL 포트에 필요)
 
 void cb_btn_cancel(lv_event_t *ev)
 {
