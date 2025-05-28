@@ -1,15 +1,15 @@
 #include "esp_event.h"
 #include "esp_log.h"
-#include "esp_lvgl_port.h"
+// #include "esp_lvgl_port.h" // LVGL 포트 제거
 #include "esp_random.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "lvgl.h"
+// #include "lvgl.h" // LVGL 제거
 #include "sdkconfig.h"
 
 #include "i2c.h"
 #include "shared.h"
-#include "slvgl.h"
+// #include "slvgl.h" // slvgl 제거
 #include "system.h"
 
 static const char *TAG = "WILLOW/SYSTEM";
@@ -56,7 +56,7 @@ static esp_err_t init_ev_loop()
 void init_system(void)
 {
     set_hw_type();
-    init_i2c();
+    init_i2c(); // I2C는 터치스크린과 관련된 경우도 있지만, 다른 센서 등에도 사용될 수 있으므로 유지
     ESP_ERROR_CHECK(init_ev_loop());
 }
 
@@ -71,11 +71,12 @@ void restart_delayed(void)
 
     ESP_LOGI(TAG, "restarting after %" PRIu32 " seconds", delay);
 
-    if (lvgl_port_lock(lvgl_lock_timeout)) {
-        lv_label_set_text_fmt(lbl_ln4, "Restarting in %" PRIu32 " seconds", delay);
-        lv_obj_clear_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
-        lvgl_port_unlock();
-    }
+    // LVGL UI 관련 호출 제거
+    // if (lvgl_port_lock(lvgl_lock_timeout)) {
+    //     lv_label_set_text_fmt(lbl_ln4, "Restarting in %" PRIu32 " seconds", delay);
+    //     lv_obj_clear_flag(lbl_ln4, LV_OBJ_FLAG_HIDDEN);
+    //     lvgl_port_unlock();
+    // }
 
     delay *= 1000;
     vTaskDelay(delay / portTICK_PERIOD_MS);
